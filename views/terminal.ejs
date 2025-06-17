@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Playground Terminal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Prevent page scroll */
+    }
+    #terminal {
+      width: 100vw;
+      height: 100vh;
+      background-color: black;
+      /* No overflow here; xterm handles scrollback */
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+  <script>
+    const term = new Terminal({ scrollback: 5000 });
+    const fitAddon = new window.FitAddon.FitAddon();
+
+    
+
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
+
+    window.addEventListener('resize', () => fitAddon.fit());
+
+    let state = 'menu';
+    let tempData = {};
+
+    function showMenu() {
+      term.clear();
+      term.write('\x1b[1;36m\n=== Inventory Management Menu ===\x1b[0m\r\n');
+      term.write('1. View all products\r\n');
+      term.write('2. View sales report\r\n');
+      term.write('3. Create new product\r\n');
+      term.write('4. Create new category\r\n');
+      term.write('5. Make Sale\r\n');
+      term.write('6. Exit\r\n');
+      term.write('\r\nEnter your choice: ');
+      state = 'menu';
+    }
+
+    function prompt(msg) {
+      term.write('\r\n' + msg);
+    }
+
+    function handleMenuInput(input) {
+      switch (input.trim()) {
+        case '1':
+          fetch('/products')
+            .then(res => res.json())
+            .then(data => {
+              term.clear();
+              term.write('\r\n--- Products ---\r\n');
+              data.forEach(p => {
+                term.write(`ID: ${p.id} | Name: ${p.name} | Desc: ${p.description} | Category ID: ${p.category_id}\r\n`);
+              });
+              prompt('Press enter to continue...');
+              state = 'wait';
+            });
+          break;
+        case '2':
+          fetch('/sales')
+            .then(res => res.json())
+            .then(data => {
+              term.clear();
+              term.write('\r\n--- Sales Report ---\r\n');
+              data.forEach(s => {
+                term.write(`Sale ID: ${s.sale_id} | Product: ${s.product_name} | Category: ${s.category_name} | Qty: ${s.quantity} | Sold At: ${s.sold_at}\r\n`);
+              });
+              prompt('Press enter to continue...');
+              state = 'wait';
+            });
+          break;
+        case '3':
+          tempData = {};
+          prompt('Enter product name: ');
+          state = 'addProduct_name';
+          break;
+        case '4':
+          tempData = {};
+          prompt('Enter category name: ');
+          state = 'addCategory_name';
+          break;
+        case '5':
+          tempData = {};
+          prompt('Enter product ID to sell: ');
+          state = 'makeSale_productId';
+          break;
+        case '6':
+          term.write('\r\nExiting... Goodbye!\r\n');
+          state = 'exit';
+          break;
+        default:
+          term.write('\r\nInvalid choice. Try again.');
+          showMenu();
+      }
+    }
+
+    function handleInput(input) {
+      if (state === 'menu') {
+        handleMenuInput(input);
+      } else if (state === 'wait') {
+        showMenu();
+      } else if (state === 'addProduct_name') {
+        tempData.name = input;
+        prompt('Enter product description: ');
+        state = 'addProduct_desc';
+      } else if (state === 'addProduct_desc') {
+        tempData.desc = input;
+        prompt('Enter category ID: ');
+        state = 'addProduct_catID';
+      } else if (state === 'addProduct_catID') {
+        tempData.catID = Number(input);
+        fetch('/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tempData)
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              term.write('\r\n\x1b[31mError: ' + data.error + '\x1b[0m\r\n');
+            } else {
+              term.write('\r\n\x1b[32mProduct created!\x1b[0m\r\n');
+            }
+            prompt('Press enter to continue...');
+            state = 'wait';
+          });
+      } else if (state === 'addCategory_name') {
+        tempData.name = input;
+        prompt('Enter category description: ');
+        state = 'addCategory_desc';
+      } else if (state === 'addCategory_desc') {
+        tempData.desc = input;
+        fetch('/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tempData)
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              term.write('\r\n\x1b[31mError: ' + data.error + '\x1b[0m\r\n');
+            } else {
+              term.write('\r\n\x1b[32mCategory created!\x1b[0m\r\n');
+            }
+            prompt('Press enter to continue...');
+            state = 'wait';
+          });
+      } else if (state === 'makeSale_productId') {
+        tempData.productId = Number(input);
+        prompt('Enter quantity sold: ');
+        state = 'makeSale_quantity';
+      } else if (state === 'makeSale_quantity') {
+        tempData.quantity = Number(input);
+        tempData.soldAt = new Date().toISOString();
+        fetch('/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(tempData)
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.error) {
+              term.write('\r\n\x1b[31mError: ' + data.error + '\x1b[0m\r\n');
+            } else {
+              term.write('\r\n\x1b[32mSale recorded!\x1b[0m\r\n');
+            }
+            prompt('Press enter to continue...');
+            state = 'wait';
+          });
+          
+      }
+    }
+
+    let command = '';
+    term.write('Welcome to the Admin Playground!\r\n');
+    showMenu();
+
+    term.onData(data => {
+      for (const char of data) {
+        if (char === '\r') {
+          handleInput(command);
+          command = '';
+          if (state !== 'wait' && state !== 'menu' && state !== 'exit') term.write('\r\n');
+        } else if (char === '\u007F') {
+          if (command.length > 0) {
+            command = command.slice(0, -1);
+            term.write('\b \b');
+          }
+        } else if (char >= ' ' && char <= '~') {
+          command += char;
+          term.write(char);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
