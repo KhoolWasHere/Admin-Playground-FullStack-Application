@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/Tablesui.css">
+    <title>Product Table UI</title>
+</head>
+<body>
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-toggle="tab" href="#products">Products</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#categories">Categories</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-toggle="tab" href="#sales">Sales</a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <div id="products" class="tab-pane fade show active">
+            <div class="container mt-4">
+                <h1 class="mb-4 text-center">Product Management</h1>
+                <div id="statusMessageProduct" class="status-message product-status-message" role="alert"></div>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Category ID</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% products.forEach(product => { %>
+                            <tr data-product-id="<%= product.id %>">
+                                <th scope="row" class="uneditable"><%= product.id %></th>
+                                <td class="editable product-name"><%- product.name %></td>
+                                <td class="editable product-description"><%- product.description %></td>
+                                <td class="editable product-category-id"><%- product.category_id %></td>
+                                <td class="uneditable"><button class="btn btn-secondary update-row-btn">Update</button></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary add-row-btn">Add New Product</button>
+            </div>
+        </div>
+
+        <div id="categories" class="tab-pane fade">
+            <div class="container mt-4">
+                <h1 class="mb-4 text-center">Category Management</h1>
+                <div id="statusMessageCategory" class="status-message category-status-message" role="alert"></div>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% categories.forEach(category => { %>
+                            <tr data-category-id="<%= category.id %>">
+                                <th scope="row" class="uneditable"><%= category.id %></th>
+                                <td class="editable category-name"><%- category.name %></td>
+                                <td class="editable category-description"><%- category.description %></td>
+                                <td class="uneditable"><button class="btn btn-secondary update-category-row-btn">Update</button></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary add-category-row-btn">Add New Category</button>
+            </div>
+        </div>
+
+        <div id="sales" class="tab-pane fade">
+            <div class="container mt-4">
+                <h1 class="mb-4 text-center">Sales Data</h1>
+                <div id="statusMessageSales" class="status-message sales-status-message" role="alert"></div>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Product Name</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Sale Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% sales.forEach(sale => { %>
+                            <tr data-sales-id="<%= sale.sale_id %>">
+                                <th scope="row" class="uneditable"><%= sale.sale_id %></th>
+                                <td class="uneditable sale-productName"><%- sale.product_name %></td>
+                                <td class="uneditable sale-quantity"><%- sale.quantity %></td>
+                                <td class="uneditable sale-date"><%- sale.sold_at%></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <button class="btn btn-primary add-sale-row-btn">Add New Sale</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            // Function to display status messages
+            function showStatusMessage(message, type, statusMessageDiv) {
+                statusMessageDiv.removeClass('success error').addClass(type).text(message).fadeIn();
+                setTimeout(() => {
+                    statusMessageDiv.fadeOut();
+                }, 3000); // Hide after 3 seconds
+            }
+
+            // Event delegation for making table cells editable on click
+            // This ensures new rows added dynamically are also editable
+            $('.table tbody').on('click', '.editable', function() {
+                var $cell = $(this);
+                // Only make editable if it's not already in input mode
+                if ($cell.find('input').length) {
+                    return;
+                }
+
+                var originalContent = $cell.text();
+                var $input = $('<input>', {
+                    type: 'text',
+                    value: originalContent,
+                    class: 'form-control', // Add Bootstrap styling for the input
+                    blur: function() {
+                        $cell.text($input.val());
+                        $cell.removeClass('editing'); // Remove editing class
+                    },
+                    keyup: function(e) {
+                        if (e.which === 13) { // Enter key
+                            $input.blur();
+                        }
+                    }
+                }).appendTo($cell.empty()).focus();
+                $cell.addClass('editing'); // Add a class to indicate editing mode
+            });
+
+            // Handle adding a new row to the product table
+            $('.add-row-btn').click(function() {
+                // Create a new row with empty fields, marked as 'new' for identification
+                var newRow = `
+                    <tr class="new-product-row">
+                        <th scope="row" class="uneditable new-id">New</th>
+                        <td class="editable product-name"></td>
+                        <td class="editable product-description"></td>
+                        <td class="editable product-category-id"></td>
+                        <td class="uneditable"><button class="btn btn-secondary update-row-btn">Add Product</button></td>
+                    </tr>
+                `;
+                // Append the new row to the table body within the products tab
+                $('#products .table tbody').append(newRow);
+
+                // Scroll to the new row to make it visible
+                $('html, body').animate({
+                    scrollTop: $(document).height()
+                }, 'slow');
+            });
+
+
+            // Handle adding a new row to the sales table
+            $('.add-sale-row-btn').click(function() {
+                // Create a new row with empty fields, marked as 'new' for identification
+                var newRow = `
+                    <tr class="new-sale-row">
+                        <th scope="row" class="uneditable new-id">New</th>
+                        <td class="uneditable sale-productName">
+                            <select class="form-control choose-product-button">
+                            <% products.forEach(product => { %>
+                                <option value="<%= product.id %>"><%- product.name %></option>
+                            <% }); %>
+                        </select>
+                        </td>
+                        <td class="editable sale-quantity"><input type="number" class="form-control"></td>
+                        <td class="uneditable"></td>
+                        <td class="uneditable"><button class="btn btn-secondary add-sale-to-db-btn">Add Sale</button></td>
+                    </tr>
+                `;
+
+                // Append the new row to the table body within the sales tab
+                $('#sales .table tbody').append(newRow);
+
+                // Scroll to the new row to make it visible
+                $('html, body').animate({
+                    scrollTop: $(document).height()
+                }, 'slow');
+            });
+
+            // Add a new row to the category table
+            $('.add-category-row-btn').click(function() {
+                var newRow = `
+                    <tr class="new-category-row">
+                        <th scope="row" class="uneditable new-id">New</th>
+                        <td class="editable category-name"></td>
+                        <td class="editable category-description"></td>
+                        <td class="uneditable"><button class="btn btn-secondary add-category-row-to-db-btn">Add Category</button></td>
+                    </tr>
+                `;
+                $('#categories .table tbody').append(newRow);
+
+                $('html, body').animate({
+                    scrollTop: $(document).height()
+                }, 'slow');
+            });
+
+            // Function to add a new product to the database via AJAX
+            function addProductToDatabase(name, description, category_id, $rowElement) {
+                $.ajax({
+                    url: '/add-product', // Endpoint for adding new products
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        name: name.trim(),
+                        description: description.trim(),
+                        category_id: category_id.trim()
+                    }),
+                    success: function(response) {
+                        console.log('Product added successfully:', response);
+                        showStatusMessage('Product added successfully!', 'success', $('.product-status-message'));
+
+                        // Update the newly added row with the actual ID from the database
+                        // and change its button text to 'Update' for future edits
+                        if (response.id) {
+                            $rowElement.attr('data-product-id', response.id); // Set the actual ID
+                            $rowElement.find('.new-id').text(response.id).removeClass('new-id'); // Update ID display
+                            $rowElement.find('.update-row-btn').text('Update'); // Change button text
+                            $rowElement.removeClass('new-product-row'); // Remove new row class
+                        }
+                    },
+                    error: function(err) {
+                        console.error('Error adding product:', err);
+                        showStatusMessage('Error adding product. Please try again.', 'error', $('.product-status-message'));
+                    }
+                });
+            }
+
+            // Function to edit an existing product in the database via AJAX
+            function editProduct(id, name, description, category_id) {
+                $.ajax({
+                    url: '/edit-product', // Endpoint for editing existing products
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        id: id,
+                        name: name.trim(),
+                        description: description.trim(),
+                        category_id: category_id.trim()
+                    }),
+                    success: function(response) {
+                        console.log('Update successful:', response);
+                        showStatusMessage('Product updated successfully!', 'success', $('.product-status-message'));
+                    },
+                    error: function(err) {
+                        console.error('Update failed:', err);
+                        showStatusMessage('Error updating product. Please try again.', 'error', $('.product-status-message'));
+                    }
+                });
+            }
+
+            // Event delegation for handling 'Update'/'Add Product' button clicks for products
+            $('.table tbody').on('click', '.update-row-btn', function() {
+                var $row = $(this).closest('tr'); // Get the parent row of the clicked button
+                var id = $row.attr('data-product-id'); // Get existing product ID
+                var name = $row.find('.product-name').text();
+                var description = $row.find('.product-description').text();
+                var category_id = $row.find('.product-category-id').text();
+
+                // Determine if it's an 'add' operation (new row) or an 'edit' operation
+                if ($row.hasClass('new-product-row')) {
+                    // This is a new row, so call the add function
+                    addProductToDatabase(name, description, category_id, $row);
+                } else {
+                    // This is an existing row, so call the edit function
+                    editProduct(id, name, description, category_id);
+                }
+            });
+
+            // Function to edit an existing category in the database via AJAX
+            function editCategory(id, name, description) {
+                $.ajax({
+                    url: '/edit-category', // Endpoint for editing existing categories
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        id: id,
+                        name: name.trim(),
+                        description: description.trim(),
+                    }),
+                    success: function(response) {
+                        console.log('Update successful:', response);
+                        showStatusMessage('Category updated successfully!', 'success', $('.category-status-message'));
+                    },
+                    error: function(err) {
+                        console.error('Update failed:', err);
+                        showStatusMessage('Error updating Category. Please try again.', 'error', $('.category-status-message'));
+                    }
+                });
+            }
+
+            // Event delegation for handling 'Update' button clicks for categories
+            $('.table tbody').on('click', '.update-category-row-btn', function() {
+                var $row = $(this).closest('tr'); // Get the parent row of the clicked button
+                var id = $row.attr('data-category-id'); // Get existing category ID
+                var name = $row.find('.category-name').text();
+                var description = $row.find('.category-description').text();
+
+                editCategory(id, name, description);
+            });
+
+            // Event delegation for handling 'Add category' button clicks
+            $('.table tbody').on('click', '.add-category-row-to-db-btn', function() {
+                var $row = $(this).closest('tr'); // Get the parent row of the clicked button
+                var name = $row.find('.category-name').text();
+                var description = $row.find('.category-description').text();
+
+                addCategoryToDatabase(name, description, $row);
+            });
+
+            // Function to add a new category to the database via AJAX
+            function addCategoryToDatabase(name, description, $rowElement) {
+                $.ajax({
+                    url: '/categories', // Endpoint for adding new category
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        name: name.trim(),
+                        desc: description.trim(),
+                    }),
+                    success: function(response) {
+                        console.log('Category added successfully:', response);
+                        showStatusMessage('Category added successfully!', 'success', $('.category-status-message'));
+                        // Update the newly added row with the actual ID from the database
+                        // and change its button text to 'Update' for future edits
+                        if (response.id) {
+                            $rowElement.attr('data-category-id', response.id); // Set the actual ID
+                            $rowElement.find('.new-id').text(response.id).removeClass('new-id'); // Update ID display
+                            $rowElement.find('.add-category-row-to-db-btn').text('Update'); // Change button text
+                            $rowElement.removeClass('new-category-row'); // Remove new row class
+                        }
+                    },
+                    error: function(err) {
+                        console.error('Error adding category:', err);
+                        showStatusMessage('Error adding category. Please try again.', 'error', $('.category-status-message'));
+                    }
+                });
+            }
+
+            // Function to add a new sale to the database via AJAX
+            function addSaleToDatabase(product_id, quantity, sold_at, $rowElement) {
+                try {
+                    $.ajax({
+                        url: '/sales', // Endpoint for adding new sales
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            product_id: product_id, // This is now a number
+                            quantity: quantity,     // This is now a number
+                            sold_at: sold_at.trim() // Ensure sold_at is a string
+                        }),
+                        success: function(response) {
+                            console.log('Sale added successfully:', response);
+                            showStatusMessage('Sale added successfully!', 'success', $('.sales-status-message'));
+
+                            // Update the newly added row with the actual ID and sale date from the database
+                            if (response.sale_id) { // Assuming your backend returns 'sale_id'
+                                $rowElement.attr('data-sales-id', response.sale_id);
+                                $rowElement.find('.new-id').text(response.sale_id).removeClass('new-id');
+                                // Ensure sold_at exists in response, otherwise provide a fallback
+                                $rowElement.find('.sale-date').text(response.sold_at || new Date().toISOString().slice(0, 10)); // Populate sale date, fallback to current date
+                                $rowElement.find('.add-sale-to-db-btn').text('Update'); // Change button text
+                                $rowElement.removeClass('new-sale-row'); // Remove new row class
+                            }
+                        },
+                        error: function(err) {
+                            console.error('Error adding sale:', err);
+                            showStatusMessage('Error adding sale. Please try again.', 'error', $('.sales-status-message'));
+                        }
+                    });
+                } catch (e) {
+                    console.error("An error occurred", e);
+                }
+            }
+
+            // Event delegation for handling 'Add sale' button clicks
+            $('.table tbody').on('click', '.add-sale-to-db-btn', function() {
+                var $row = $(this).closest('tr');
+                // FIX: Use the correct selector for the product select element
+                var raw_product_id = $row.find('.choose-product-button').val();
+                var raw_quantity = $row.find('.sale-quantity input').val();
+                var raw_sold_at = new Date().toISOString().slice(0, 10);
+
+                console.log("Captured product_id (raw):", raw_product_id, "Type:", typeof raw_product_id);
+                console.log("Captured quantity (raw):", raw_quantity, "Type:", typeof raw_quantity);
+                console.log("Captured sold_at (raw):", raw_sold_at, "Type:", typeof raw_sold_at);
+
+                let product_id = parseInt(raw_product_id);
+                let quantity = parseInt(raw_quantity);
+
+                if (isNaN(product_id)) {
+                    showStatusMessage('Please select a valid product.', 'error', $('.sales-status-message'));
+                    return;
+                }
+                if (isNaN(quantity) || quantity <= 0) {
+                    showStatusMessage('Quantity must be a positive number.', 'error', $('.sales-status-message'));
+                    return;
+                }
+
+                addSaleToDatabase(product_id, quantity, raw_sold_at, $row);
+            });
+        });
+
+        // Activate Bootstrap tabs
+        $(function () {
+            $('.nav-tabs a').click(function (e) {
+                e.preventDefault();
+                $(this).tab('show');
+            });
+        });
+    </script>
+</body>
+</html>

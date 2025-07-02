@@ -1,44 +1,47 @@
-const db = require('../db/db');
+const { odbc, connectionString } = require('../db/mssql');
 const Joi = require('joi');
 
-// Product validation schema
 const productSchema = Joi.object({
-    name: Joi.string()
-        .trim()
-        .min(2)
-        .max(80)
-        .pattern(/^[a-zA-Z0-9 .,']+$/)
-        .disallow('null', 'undefined')
-        .required(),
-    desc: Joi.string()
-        .trim()
-        .min(10)
-        .max(200)
-        .pattern(/^[a-zA-Z0-9 .,'\-#+]+$/)
-        .disallow('null', 'undefined')
-        .required(),
-    catID: Joi.number()
-        .integer()
-        .min(1)
-        .max(9999)
-        .required()
+    name: Joi.string().min(1).max(100).required(),
+    desc: Joi.string().min(1).max(500).required(),
+    catID: Joi.number().integer().min(1).max(999).required()
 });
 
-// Create a new product
-function createProduct(name, desc, catID) {
+async function createProduct(name, desc, catID) {
     const { error } = productSchema.validate({ name, desc, catID });
     if (error) {
         throw new Error('Invalid product data: ' + error.details[0].message);
     }
-    db.prepare('INSERT INTO products (name, description, category_id) VALUES (?, ?, ?)').run(name, desc, catID);
+    const connection = await odbc.connect(connectionString);
+    await connection.query(
+        'INSERT INTO products (name, description, category_id) VALUES (?, ?, ?)',
+        [name, desc, catID]
+    );
+    await connection.close();
 }
 
-// Get all products
-function getAllProducts() {
-    return db.prepare('SELECT * FROM products').all();
+async function getAllProducts() {
+    const connection = await odbc.connect(connectionString);
+    const result = await connection.query('SELECT * FROM products');
+    await connection.close();
+    return result;
+}
+
+async function editProduct(id, name, desc, catID) {
+    const { error } = productSchema.validate({ name, desc, catID });
+    if (error) {
+        throw new Error('Invalid product data: ' + error.details[0].message);
+    }
+    const connection = await odbc.connect(connectionString);
+    await connection.query(
+        'UPDATE products SET name = ?, description = ?, category_id = ? WHERE id = ?',
+        [name, desc, catID, id]
+    );
+    await connection.close();
 }
 
 module.exports = {
     createProduct,
-    getAllProducts
+    getAllProducts,
+    editProduct
 };

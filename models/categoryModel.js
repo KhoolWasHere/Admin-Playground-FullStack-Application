@@ -1,4 +1,4 @@
-const db = require('../db/db');
+const { odbc, connectionString } = require('../db/mssql');
 const Joi = require('joi');
 
 // Category validation schema
@@ -20,20 +20,42 @@ const categorySchema = Joi.object({
 });
 
 // Create a new category
-function createCategory(name, desc) {
+async function createCategory(name, desc) {
     const { error } = categorySchema.validate({ name, desc });
     if (error) {
         throw new Error('Invalid category data: ' + error.details[0].message);
     }
-    db.prepare('INSERT INTO categories (name, description) VALUES (?, ?)').run(name, desc);
+    const connection = await odbc.connect(connectionString);
+    await connection.query(
+        'INSERT INTO categories (name, description) VALUES (?, ?)',
+        [name, desc]
+    );
+    await connection.close();
+}
+
+async function editCategory(id, name, desc) {
+    const { error } = categorySchema.validate({ name, desc });
+    if (error) {
+        throw new Error('Invalid category data:' + error.details[0].message);
+    }
+    const connection = await odbc.connect(connectionString);
+    await connection.query(
+        'UPDATE categories SET name = ?, description = ? WHERE id = ?',
+        [name, desc, id]
+    );
+    await connection.close();
 }
 
 // Get all categories
-function getAllCategories() {
-    return db.prepare('SELECT * FROM categories').all();
+async function getAllCategories() {
+    const connection = await odbc.connect(connectionString);
+    const result = await connection.query('SELECT * FROM categories');
+    await connection.close();
+    return result;
 }
 
 module.exports = {
     createCategory,
-    getAllCategories
+    getAllCategories,
+    editCategory
 };

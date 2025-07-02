@@ -1,14 +1,27 @@
 {
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "lint": "eslint --config eslint.config.js . --ext .js,.ejs",
+    "lint:ejs": "npx ejs-lint views/**/*.ejs"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^11.10.0",
+    "bootstrap": "^5.3.7",
     "ejs": "^3.1.10",
+    "ejs-lint": "^2.0.1",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "joi": "^17.13.3",
+    "jquery": "^3.7.1",
+    "mssql": "^11.0.1",
+    "odbc": "^2.4.9",
     "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "eslint-plugin-ejs": "^0.0.2",
+    "msnodesqlv8": "^4.5.0",
+    "nodemon": "^3.1.10"
   }
 }
