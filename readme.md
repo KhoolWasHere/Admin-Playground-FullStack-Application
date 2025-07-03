@@ -2,7 +2,8 @@
 
 A full-stack demo application for managing an imaginary fitness equipment shop. This project demonstrates SQL integration, user roles, and a web-based terminal UI.
 
-
+## Login
+To login and access everything, use the username of "admin" and the password of "yourpassword"
 ## Installation
 
 1. Clone the repository:git clone https://github.com/yourusername/your-repo-name.git
