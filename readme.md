@@ -2,17 +2,6 @@
 
 A full-stack demo application for managing an imaginary fitness equipment shop. This project demonstrates SQL integration, user roles, and a web-based terminal UI.
 
-To log into admin, which is able to access and DO everything use this login:
-Username: admin
-Password: Th1s1isG000dPword#W@luigi1NSSBc0pp'nDr1pFRfR
-
-To log into seller, which is able to access only selling mechanics, using this login:
-Username: seller
-Password: Wh@ttyp3O'p3rs0nBuyzTrvsSc0txBrcl00naShrt?1991Chcg0Blls
-
-To log into creator, which is able to create products and categories, use this login:
-Username: creator
-Password: 1l1k3myJ'sfr33shfrfrAin'tN0W@yD1dbya1nTL1f3Prs0n
 
 ## Installation
 
