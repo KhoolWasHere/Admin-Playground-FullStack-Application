@@ -6,7 +6,7 @@ A full-stack demo application for managing an imaginary fitness equipment shop. 
 To login and access everything, use the username of "admin" and the password of "yourpassword"
 ## Installation
 
-1. Clone the repository:git clone https://github.com/yourusername/your-repo-name.git
+1. Clone the repository: git clone https://github.com/KhoolWasHere/Database-Editor-for-Imaginary-Site.git
 2. Install dependencies: npm install
 3. Set up the database: node db.js
 4. Start the application: npm start
